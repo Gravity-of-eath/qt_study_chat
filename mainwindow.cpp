@@ -30,8 +30,8 @@ void MainWindow::initName() {
     }
     ui->lineEdit->setText(username);
     connect(ui->loginButton, &QPushButton::clicked, [&] {
-        QString name = ui->lineEdit->text();
-        if (name.isEmpty())
+        username = QString(ui->lineEdit->text());
+        if (username.isEmpty())
             username = "unknown";
         UserListWindow *ulw = new UserListWindow(NULL, username);
         ulw->show();

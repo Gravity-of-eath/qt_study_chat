@@ -17,7 +17,7 @@ public:
     void init();
     void onLine();
     void offLine();
-    void reply(QString ip);
+    void reply(QHostAddress ip);
 private:
     QString name;
     QUdpSocket *udpSocket;

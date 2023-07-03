@@ -42,7 +42,7 @@ void BroadCaster::offLine() {
                              QHostAddress::Broadcast, port);
 }
 
-void BroadCaster::reply(QString ip) {
+void BroadCaster::reply(QHostAddress ip) {
     QJsonObject myData;
     myData.insert(NAME, name);
     myData.insert(IP_ADDR, get_local_ip());
@@ -51,7 +51,7 @@ void BroadCaster::reply(QString ip) {
     document.setObject(myData);
     QByteArray array = document.toJson(QJsonDocument::Compact);
     udpSocket->writeDatagram(array, array.size(),
-                             QHostAddress(ip), port);
+                             ip, port);
 }
 
 
@@ -59,12 +59,12 @@ void BroadCaster::reply(QString ip) {
 BroadCaster::OnReceiveData() {
     while (udpSocket->hasPendingDatagrams()) {
         QByteArray datagram;
-        datagram.resize(udpSocket->pendingDatagramSize());
-        udpSocket->readDatagram(datagram.data(), datagram.size());
         QJsonParseError jsonError;
         QString strName;
-        QString strIp;
         QString strStatus;
+        QHostAddress senderIp;
+        datagram.resize(udpSocket->pendingDatagramSize());
+        udpSocket->readDatagram(datagram.data(), datagram.size(), &senderIp);
         QJsonDocument document = QJsonDocument::fromJson(datagram.data(), &jsonError); //转化为JSON文档
         if( !document.isNull() && (jsonError.error == QJsonParseError::NoError)) { //解析未发生错误
             if(document.isObject()) {
@@ -83,8 +83,8 @@ BroadCaster::OnReceiveData() {
                 if(object.contains(IP_ADDR)) {
                     QJsonValue ipAddr = object.value(IP_ADDR);
                     if(ipAddr.isString()) {
-                        strIp = ipAddr.toString();
-                        qDebug() << "ip is :" << strIp;
+                        QString strIp = ipAddr.toString();
+                        qDebug() << "RealIp : " << senderIp << " report ip is :" << strIp;
                     }
                 }
                 if(object.contains(STATUS)) {
@@ -98,23 +98,22 @@ BroadCaster::OnReceiveData() {
         } else {
             qDebug() << "Json error :" << QString(datagram.data());
         }
-        if(!strName.isEmpty() && !strIp.isEmpty() && !strStatus.isEmpty()) {
-            qDebug() << strName << "-- " << strIp << "-- " << strStatus;
-            QHostAddress deviceIp(strIp);
-            Device *d = new Device(strName, deviceIp);
+        if(!strName.isEmpty()  && !strStatus.isEmpty()) {
+            qDebug() << strName << "-- " << senderIp << "-- " << strStatus;
+            Device *d = new Device(strName, senderIp);
             if(strStatus == "onLine") {
                 QString localIP = get_local_ip();
-                if(localIP == strIp) {
+                if(localIP == senderIp.toString()) {
                     qDebug() << "self online ip = " << localIP;
                 } else {
-                    reply(strIp);
+                    reply(senderIp);
                     emit onDeviceStatus(d, true);
                 }
             } else {
                 emit onDeviceStatus(d, false);
             }
         } else {
-            qDebug() << "Json error name:  " << strName << "  strIp:" << strIp << "  strStatus:" << strStatus;
+            qDebug() << "Json error name:  " << strName << "  strIp:" << senderIp << "  strStatus:" << strStatus;
         }
     }
 }

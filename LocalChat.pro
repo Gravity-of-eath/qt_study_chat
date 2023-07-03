@@ -29,14 +29,18 @@ SOURCES += \
     userlistwindow.cpp \
     broadcaster.cpp \
     device.cpp \
-    chatwindow.cpp
+    chatwindow.cpp \
+    localserver.cpp \
+    chatsession.cpp
 
 HEADERS += \
         mainwindow.h \
     userlistwindow.h \
     broadcaster.h \
     device.h \
-    chatwindow.h
+    chatwindow.h \
+    localserver.h \
+    chatsession.h
 
 FORMS += \
         mainwindow.ui \

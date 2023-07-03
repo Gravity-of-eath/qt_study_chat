@@ -1,17 +1,28 @@
-#ifndef LOCALSERVER_H
-#define LOCALSERVER_H
 
-#include <QObject>
+#ifndef SERVER_H
+#define SERVER_H
 
-class LocalServer : public QObject
-{
+#include <QTcpServer>
+#include "chatsession.h"
+
+class ChatSession;
+
+class LocalServer : public QTcpServer {
     Q_OBJECT
+
 public:
-    explicit LocalServer(QObject *parent = nullptr);
+    LocalServer(QObject *parent = 0);
+    ChatSession *getOrCreateSession(QString name, QHostAddress addr);
+
+private:
+    QMultiHash<QHostAddress, ChatSession *> sessions;
+    int port = 45546;
 
 signals:
+    void newConnection(ChatSession *connection);
 
-public slots:
+protected:
+    void incomingConnection(qintptr socketDescriptor) override;
 };
 
-#endif // LOCALSERVER_H
+#endif

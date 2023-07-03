@@ -5,6 +5,7 @@
 #include "broadcaster.h"
 #include "device.h"
 #include "chatwindow.h"
+#include "localserver.h"
 
 namespace Ui {
     class UserListWindow;
@@ -23,6 +24,8 @@ private:
     BroadCaster *caster;
     QList <ChatWindow *> opened;
     QMap<QString, Device *> devicesMap;
+    LocalServer *server;
+
 
 
 public slots:

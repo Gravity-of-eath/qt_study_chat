@@ -17,6 +17,7 @@ UserListWindow::UserListWindow(QWidget *parent, QString name) :
     this->name = name;
     ui->label->setText(name);
     caster = new BroadCaster(name);
+    server = new LocalServer(this);
     connect(caster, SIGNAL(onDeviceStatus(Device *, bool)),
             this, SLOT(OnDevice(Device *, bool)));
     connect(this, SIGNAL(QWidget::closeEvent()), this, SLOT(onClosed()));
@@ -30,8 +31,6 @@ UserListWindow::OnDevice(Device *d, bool onLine) {
     qDebug() << "OnDevice=--------";
     if(onLine) {
         devicesMap.insert(d->getIPString(), d);
-        devicesMap.insert(d->getIPString() + "1", new Device("KKFa", QHostAddress::LocalHost));
-        devicesMap.insert(d->getIPString() + "2", d);
     } else {
         devicesMap.remove(d->getIPString());
     }
@@ -64,7 +63,7 @@ UserListWindow::onItemClicked(QModelIndex index) {
                 }
             }
         }
-        ChatWindow *cw = new ChatWindow(NULL, devs);
+        ChatWindow *cw = new ChatWindow(NULL, devs, server);
         opened.append(cw);
         connect(cw, SIGNAL(onWindowClose(ChatWindow *)), this, SLOT(onWindowClose(ChatWindow *)));
         cw->show();
