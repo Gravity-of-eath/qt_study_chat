@@ -29,6 +29,7 @@ public:
         Undefined
     };
     QString localName;
+    Device *d;
 
 
     QString name() const;
@@ -64,7 +65,6 @@ private:
     int numBytesForCurrentDataType;
     int transferTimerId;
     bool isGreetingMessageSent;
-    Device *d;
 };
 
 #endif

@@ -33,6 +33,7 @@ public slots:
     onItemClicked(QModelIndex index);
     onWindowClose(ChatWindow *cw);
     void closeEvent(QCloseEvent *e);
+    newConnection(ChatSession *cs);
 };
 
 #endif // USERLISTWINDOW_H

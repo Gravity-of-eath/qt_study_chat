@@ -21,6 +21,7 @@ UserListWindow::UserListWindow(QWidget *parent, QString name) :
     connect(caster, SIGNAL(onDeviceStatus(Device *, bool)),
             this, SLOT(OnDevice(Device *, bool)));
     connect(this, SIGNAL(QWidget::closeEvent()), this, SLOT(onClosed()));
+    connect(server, SIGNAL(LocalServer::newConnection(ChatSession *)), this, SLOT(newConnection(ChatSession *)));
 }
 
 UserListWindow::~UserListWindow() {
@@ -63,7 +64,9 @@ UserListWindow::onItemClicked(QModelIndex index) {
                 }
             }
         }
-        ChatWindow *cw = new ChatWindow(NULL, devs, server);
+        QHostAddress addr = devs->getAddress();
+        ChatSession *se = server->getOrCreateSession(devs->getName(),  &addr);
+        ChatWindow *cw = new ChatWindow(NULL, devs, se);
         opened.append(cw);
         connect(cw, SIGNAL(onWindowClose(ChatWindow *)), this, SLOT(onWindowClose(ChatWindow *)));
         cw->show();
@@ -87,4 +90,23 @@ void UserListWindow::closeEvent(QCloseEvent *e) {
         open->close();
     }
     exit(0);
+}
+
+UserListWindow::newConnection(ChatSession *cs) {
+    qDebug() << "UserListWindow.newConnection";
+    QHostAddress paddr = cs->peerAddress();
+    Device *devs;
+    QString key = paddr.toString();
+    if( devicesMap.keys().contains(key)) {
+        devs =  devicesMap.find(key).value();
+    } else {
+        devs = new Device(cs->name(), paddr);
+        devicesMap.insert(key, devs);
+    }
+    cs->d = devs;
+    cs->localName = this->name;
+    ChatWindow *cw = new ChatWindow(NULL, devs, cs);
+    opened.append(cw);
+    connect(cw, SIGNAL(onWindowClose(ChatWindow *)), this, SLOT(onWindowClose(ChatWindow *)));
+    cw->show();
 }

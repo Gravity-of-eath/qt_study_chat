@@ -3,7 +3,7 @@
 #include "device.h"
 
 bool is_virtual_network_card_or_loopback(QString str_card_name);
-QString get_local_ip();
+QHostAddress get_local_ip();
 BroadCaster::BroadCaster(QString name  ) {
     this->name = name;
     init();
@@ -19,9 +19,10 @@ void BroadCaster::init() {
 }
 
 void BroadCaster::onLine() {
+    qDebug() << "BroadCaster::onLine";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip());
+    myData.insert(IP_ADDR, get_local_ip().toString());
     myData.insert(STATUS, "onLine");
     QJsonDocument document;
     document.setObject(myData);
@@ -31,9 +32,10 @@ void BroadCaster::onLine() {
 }
 
 void BroadCaster::offLine() {
+    qDebug() << "BroadCaster::offLine";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip());
+    myData.insert(IP_ADDR, get_local_ip().toString());
     myData.insert(STATUS, "offLine");
     QJsonDocument document;
     document.setObject(myData);
@@ -43,9 +45,10 @@ void BroadCaster::offLine() {
 }
 
 void BroadCaster::reply(QHostAddress ip) {
+    qDebug() << "BroadCaster::reply";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip());
+    myData.insert(IP_ADDR, get_local_ip().toString());
     myData.insert(STATUS, "onLine");
     QJsonDocument document;
     document.setObject(myData);
@@ -57,6 +60,7 @@ void BroadCaster::reply(QHostAddress ip) {
 
 
 BroadCaster::OnReceiveData() {
+    qDebug() << "BroadCaster::OnReceiveData";
     while (udpSocket->hasPendingDatagrams()) {
         QByteArray datagram;
         QJsonParseError jsonError;
@@ -84,7 +88,7 @@ BroadCaster::OnReceiveData() {
                     QJsonValue ipAddr = object.value(IP_ADDR);
                     if(ipAddr.isString()) {
                         QString strIp = ipAddr.toString();
-                        qDebug() << "RealIp : " << senderIp << " report ip is :" << strIp;
+                        qDebug() << "RealIp : " << senderIp.toString() << " report ip is :" << strIp;
                     }
                 }
                 if(object.contains(STATUS)) {
@@ -102,10 +106,11 @@ BroadCaster::OnReceiveData() {
             qDebug() << strName << "-- " << senderIp << "-- " << strStatus;
             Device *d = new Device(strName, senderIp);
             if(strStatus == "onLine") {
-                QString localIP = get_local_ip();
-                if(localIP == senderIp.toString()) {
-                    qDebug() << "self online ip = " << localIP;
+                QHostAddress localIP = get_local_ip();
+                if(localIP.isEqual( senderIp )) {
+                    qDebug() << "self   ip = " << localIP << "isEqual ------ senderIp. " << senderIp.toString();
                 } else {
+                    qDebug() << "self online ip = " << localIP << "------ senderIp. " << senderIp.toString();
                     reply(senderIp);
                     emit onDeviceStatus(d, true);
                 }
@@ -136,8 +141,8 @@ bool is_virtual_network_card_or_loopback(QString str_card_name) {
 /**
  * @brief 获取本机IP地址
  */
-QString get_local_ip() {
-    QString localIP = "127.0.0.1";
+QHostAddress get_local_ip() {
+    QHostAddress localIP = QHostAddress::LocalHost;
     // 1. 获取所有网络接口
     QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
     QList<QNetworkAddressEntry> entry;
@@ -151,10 +156,10 @@ QString get_local_ip() {
             // entry.at(0) 是IPv6信息
             if (entry.at(1).ip().protocol() == QAbstractSocket::IPv4Protocol) {
                 if (-1 != inter.name().indexOf("wireless")) {
-                    localIP = entry.at(1).ip().toString();
+                    localIP = entry.at(1).ip() ;
                     qDebug() << inter.humanReadableName() << inter.name() << " 无线网IP: " << entry.at(1).ip().toString();
                 } else if (-1 != inter.name().indexOf("ethernet")) {
-                    localIP = entry.at(1).ip().toString();
+                    localIP = entry.at(1).ip() ;
                     qDebug() << inter.humanReadableName() << inter.name() << " 以太网IP: " << entry.at(1).ip().toString();
                 }
             }

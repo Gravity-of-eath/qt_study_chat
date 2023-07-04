@@ -2,16 +2,14 @@
 #include "ui_chatwindow.h"
 #include "chatsession.h"
 
-ChatWindow::ChatWindow(QWidget *parent, Device *d, LocalServer *server) :
+ChatWindow::ChatWindow(QWidget *parent, Device *dev, ChatSession *se) :
     QMainWindow(parent),
     ui(new Ui::ChatWindow) {
-    this->dev = d;
-    this->server = server;
+    this->se = se;
+    this->dev = dev;
     this->setWindowTitle("Chat " + dev->getName());
     ui->setupUi(this);
-    ui->name->setText(dev->getName());
-    QHostAddress addr = d->getAddress();
-    se = server->getOrCreateSession(d->getName(),  &addr);
+    ui->name->setText(se->name());
     init();
 }
 

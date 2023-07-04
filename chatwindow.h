@@ -13,14 +13,13 @@ class ChatWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    ChatWindow(QWidget *parent = 0, Device *d = NULL, LocalServer *server = NULL);
+    ChatWindow(QWidget *parent = 0, Device *dev = NULL, ChatSession *se = NULL);
     Device *dev;
     ~ChatWindow();
 
 private:
     Ui::ChatWindow *ui;
     ChatSession *se;
-    LocalServer *server;
     init();
 signals:
     onWindowClose(ChatWindow *cw);
