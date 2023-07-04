@@ -39,7 +39,7 @@ UserListWindow::OnDevice(Device *d, bool onLine) {
         QMap<QString, Device *>::Iterator itrt = devicesMap.begin();
         while (itrt != devicesMap.end()) {
             Device *dev = itrt.value();
-            list.append(dev->getName() + " (" + dev->getIPString() + ")");
+            list.append(QString(dev->getName()).append(" (" ).append( dev->getIPString()).append( ")"));
             itrt++;
         }
         QStringListModel *m = new QStringListModel(list);

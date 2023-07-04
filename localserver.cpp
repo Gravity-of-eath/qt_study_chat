@@ -9,14 +9,15 @@ LocalServer::LocalServer(QObject *parent)
     listen(QHostAddress::Any);
 }
 
-ChatSession *LocalServer::getOrCreateSession(QString name, QHostAddress addr) {
+ChatSession *LocalServer::getOrCreateSession(QString name, QHostAddress *addr) {
     ChatSession *session;
-    if( sessions.keys().contains(addr) ) {
-        session = sessions.find(addr).value();
+    if( sessions.keys().contains(*addr) ) {
+        session = sessions.find(*addr).value();
     } else {
         session = new ChatSession(this);
-        session->connectToHost(addr, port);
-        sessions.insert(addr, session);
+        session->connectToHost(*addr, port);
+        session->localName = name;
+        sessions.insert(*addr, session);
     }
     return session;
 }

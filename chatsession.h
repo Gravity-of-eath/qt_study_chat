@@ -28,6 +28,7 @@ public:
         Greeting,
         Undefined
     };
+    QString localName;
 
 
     QString name() const;

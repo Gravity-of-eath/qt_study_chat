@@ -12,7 +12,7 @@ class LocalServer : public QTcpServer {
 
 public:
     LocalServer(QObject *parent = 0);
-    ChatSession *getOrCreateSession(QString name, QHostAddress addr);
+    ChatSession *getOrCreateSession(QString name, QHostAddress *addr);
 
 private:
     QMultiHash<QHostAddress, ChatSession *> sessions;

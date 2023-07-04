@@ -19,9 +19,14 @@ public:
 
 private:
     Ui::ChatWindow *ui;
+    ChatSession *se;
     LocalServer *server;
+    init();
 signals:
     onWindowClose(ChatWindow *cw);
+private slots:
+    void onNewMessage(QString name, QString msg);
+    void readyForUse();
 public slots:
 
     void closeEvent(QCloseEvent *e);
