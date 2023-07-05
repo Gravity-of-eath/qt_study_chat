@@ -9,7 +9,8 @@ ChatWindow::ChatWindow(QWidget *parent, Device *dev, ChatSession *se) :
     this->dev = dev;
     this->setWindowTitle("Chat " + dev->getName());
     ui->setupUi(this);
-    ui->name->setText(se->name());
+    ui->msgBox->setReadOnly(true);
+    ui->name->setText(dev->getName());
     init();
 }
 
@@ -21,20 +22,16 @@ ChatWindow::init() {
     connect(se, SIGNAL(readyForUse()), this, SLOT(readyForUse()));
     connect(ui->send, &QPushButton::clicked, [&] {
         QString ss =  this->ui->input->toPlainText();
-        this->ui->input->setText("");
-        this->ui->msgBox->append(se->localName);
-        this->ui->msgBox->append(":");
-        this->ui->msgBox->append(ss);
-        this->ui->msgBox->append("\n");
-        se->sendMessage(ss);
+        if(!ss.isEmpty()) {
+            this->ui->input->setText("");
+            this->ui->msgBox->append(se->localName + " : " + ss);
+            se->sendMessage(ss);
+        }
     });
 }
 
 void ChatWindow::onNewMessage(QString name, QString msg) {
-    ui->msgBox->append(name);
-    ui->msgBox->append(":");
-    ui->msgBox->append(msg);
-    ui->msgBox->append("\n");
+    ui->msgBox->append(name + " : " + msg);
 }
 
 void ChatWindow::readyForUse() {

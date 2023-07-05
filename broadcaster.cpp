@@ -73,7 +73,6 @@ BroadCaster::OnReceiveData() {
         if( !document.isNull() && (jsonError.error == QJsonParseError::NoError)) { //解析未发生错误
             if(document.isObject()) {
                 QJsonObject object = document.object();
-                // 第一项
                 if(object.contains(NAME)) {
                     QJsonValue nameChar = object.value(NAME);
                     if(nameChar.isString()) {
@@ -83,7 +82,6 @@ BroadCaster::OnReceiveData() {
                         qDebug("name is not string!");
                     }
                 }
-                // 第二项
                 if(object.contains(IP_ADDR)) {
                     QJsonValue ipAddr = object.value(IP_ADDR);
                     if(ipAddr.isString()) {
@@ -112,8 +110,8 @@ BroadCaster::OnReceiveData() {
                 } else {
                     qDebug() << "self online ip = " << localIP << "------ senderIp. " << senderIp.toString();
                     reply(senderIp);
-                    emit onDeviceStatus(d, true);
                 }
+                emit onDeviceStatus(d, true);
             } else {
                 emit onDeviceStatus(d, false);
             }

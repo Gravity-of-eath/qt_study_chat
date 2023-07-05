@@ -11,7 +11,7 @@ QString Device::getName() {
 }
 
 QString Device::getIPString() {
-    return addr.toString();
+    return QHostAddress(addr.toIPv4Address()).toString() ;
 }
 
 QHostAddress Device::getAddress() {
