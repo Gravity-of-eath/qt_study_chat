@@ -4,13 +4,15 @@
 
 bool is_virtual_network_card_or_loopback(QString str_card_name);
 QHostAddress get_local_ip();
-BroadCaster::BroadCaster(QString name  ) {
+BroadCaster::BroadCaster(QString name)
+{
     this->name = name;
     init();
 }
 
 
-void BroadCaster::init() {
+void BroadCaster::init()
+{
     udpSocket = new QUdpSocket(this);
     udpSocket->bind(port, QUdpSocket::ShareAddress);
     connect(udpSocket, SIGNAL(readyRead()),
@@ -18,11 +20,12 @@ void BroadCaster::init() {
     onLine();
 }
 
-void BroadCaster::onLine() {
+void BroadCaster::onLine()
+{
     qDebug() << "BroadCaster::onLine";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip().toString());
+    myData.insert(IP_ADDR,  QHostAddress(get_local_ip().toIPv4Address()).toString());
     myData.insert(STATUS, "onLine");
     QJsonDocument document;
     document.setObject(myData);
@@ -31,11 +34,12 @@ void BroadCaster::onLine() {
                              QHostAddress::Broadcast, port);
 }
 
-void BroadCaster::offLine() {
+void BroadCaster::offLine()
+{
     qDebug() << "BroadCaster::offLine";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip().toString());
+    myData.insert(IP_ADDR,  QHostAddress(get_local_ip().toIPv4Address()).toString());
     myData.insert(STATUS, "offLine");
     QJsonDocument document;
     document.setObject(myData);
@@ -44,12 +48,14 @@ void BroadCaster::offLine() {
                              QHostAddress::Broadcast, port);
 }
 
-void BroadCaster::reply(QHostAddress ip) {
+void BroadCaster::reply(QHostAddress ip)
+{
     qDebug() << "BroadCaster::reply";
     QJsonObject myData;
     myData.insert(NAME, name);
-    myData.insert(IP_ADDR, get_local_ip().toString());
+    myData.insert(IP_ADDR,  QHostAddress(get_local_ip().toIPv4Address()).toString());
     myData.insert(STATUS, "onLine");
+    myData.insert(REPTY, "yes");
     QJsonDocument document;
     document.setObject(myData);
     QByteArray array = document.toJson(QJsonDocument::Compact);
@@ -59,18 +65,20 @@ void BroadCaster::reply(QHostAddress ip) {
 
 
 
-BroadCaster::OnReceiveData() {
+BroadCaster::OnReceiveData()
+{
     qDebug() << "BroadCaster::OnReceiveData";
-    while (udpSocket->hasPendingDatagrams()) {
+    while(udpSocket->hasPendingDatagrams()) {
         QByteArray datagram;
         QJsonParseError jsonError;
         QString strName;
         QString strStatus;
-        QHostAddress senderIp;
         datagram.resize(udpSocket->pendingDatagramSize());
-        udpSocket->readDatagram(datagram.data(), datagram.size(), &senderIp);
+        udpSocket->readDatagram(datagram.data(), datagram.size());
+        QHostAddress *senderIp ;
         QJsonDocument document = QJsonDocument::fromJson(datagram.data(), &jsonError); //转化为JSON文档
-        if( !document.isNull() && (jsonError.error == QJsonParseError::NoError)) { //解析未发生错误
+        bool isRepty = false;
+        if(!document.isNull() && (jsonError.error == QJsonParseError::NoError)) {  //解析未发生错误
             if(document.isObject()) {
                 QJsonObject object = document.object();
                 if(object.contains(NAME)) {
@@ -86,7 +94,8 @@ BroadCaster::OnReceiveData() {
                     QJsonValue ipAddr = object.value(IP_ADDR);
                     if(ipAddr.isString()) {
                         QString strIp = ipAddr.toString();
-                        qDebug() << "RealIp : " << senderIp.toString() << " report ip is :" << strIp;
+                        senderIp = new QHostAddress(strIp);
+                        qDebug() << "RealIp : " << senderIp->toString() << " report ip is :" << strIp;
                     }
                 }
                 if(object.contains(STATUS)) {
@@ -96,20 +105,23 @@ BroadCaster::OnReceiveData() {
                         qDebug() << "status is :" << strStatus;
                     }
                 }
+                if(object.contains(REPTY)) {
+                    isRepty = true;
+                }
             }
         } else {
             qDebug() << "Json error :" << QString(datagram.data());
         }
         if(!strName.isEmpty()  && !strStatus.isEmpty()) {
             qDebug() << strName << "-- " << senderIp << "-- " << strStatus;
-            Device *d = new Device(strName, senderIp);
+            Device *d = new Device(strName, *senderIp);
             if(strStatus == "onLine") {
                 QHostAddress localIP = get_local_ip();
-                if(localIP.isEqual( senderIp )) {
-                    qDebug() << "self   ip = " << localIP << "isEqual ------ senderIp. " << senderIp.toString();
+                if(localIP.isEqual(*senderIp) || isRepty) {
+                    qDebug() << "self   ip = " << localIP << "isEqual ------ senderIp. " << senderIp->toString();
                 } else {
-                    qDebug() << "self online ip = " << localIP << "------ senderIp. " << senderIp.toString();
-                    reply(senderIp);
+                    qDebug() << "self online ip = " << localIP << "------ senderIp. " << senderIp->toString();
+                    reply(*senderIp);
                 }
                 emit onDeviceStatus(d, true);
             } else {
@@ -126,11 +138,12 @@ BroadCaster::OnReceiveData() {
  * @param str_card_name  网卡的描述信息
  * @return 如果是虚拟网卡或回环网卡，返回true, 否则返回false
  */
-bool is_virtual_network_card_or_loopback(QString str_card_name) {
-    if (-1 != str_card_name.indexOf("VMware")
-            || -1 != str_card_name.indexOf("Loopback")
-            || -1 != str_card_name.indexOf("VirtualBox")
-       ) {
+bool is_virtual_network_card_or_loopback(QString str_card_name)
+{
+    if(-1 != str_card_name.indexOf("VMware")
+       || -1 != str_card_name.indexOf("Loopback")
+       || -1 != str_card_name.indexOf("VirtualBox")
+      ) {
         return true;
     }
     return false;
@@ -139,24 +152,25 @@ bool is_virtual_network_card_or_loopback(QString str_card_name) {
 /**
  * @brief 获取本机IP地址
  */
-QHostAddress get_local_ip() {
+QHostAddress get_local_ip()
+{
     QHostAddress localIP = QHostAddress::LocalHost;
     // 1. 获取所有网络接口
     QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
     QList<QNetworkAddressEntry> entry;
     foreach(QNetworkInterface inter, interfaces) {
         // 过滤掉不需要的网卡信息
-        if (is_virtual_network_card_or_loopback(inter.humanReadableName())) {
+        if(is_virtual_network_card_or_loopback(inter.humanReadableName())) {
             continue;
         }
-        if (inter.flags() & (QNetworkInterface::IsUp | QNetworkInterface::IsRunning)) {
+        if(inter.flags() & (QNetworkInterface::IsUp | QNetworkInterface::IsRunning)) {
             entry = inter.addressEntries();
             // entry.at(0) 是IPv6信息
-            if (entry.at(1).ip().protocol() == QAbstractSocket::IPv4Protocol) {
-                if (-1 != inter.name().indexOf("wireless")) {
+            if(entry.at(1).ip().protocol() == QAbstractSocket::IPv4Protocol) {
+                if(-1 != inter.name().indexOf("wireless")) {
                     localIP = entry.at(1).ip() ;
                     qDebug() << inter.humanReadableName() << inter.name() << " 无线网IP: " << entry.at(1).ip().toString();
-                } else if (-1 != inter.name().indexOf("ethernet")) {
+                } else if(-1 != inter.name().indexOf("ethernet")) {
                     localIP = entry.at(1).ip() ;
                     qDebug() << inter.humanReadableName() << inter.name() << " 以太网IP: " << entry.at(1).ip().toString();
                 }
